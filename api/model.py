@@ -13,21 +13,21 @@ class GloVeClass(nn.Module):
             This method initialize GloVeClass with given parameters.
         
             Args:
-                tokenized_corpus(list) : 
-                unique_word_list(ndarray) : 
-                embed_size : 
-                context_size :
-                x_max :
-                alpha :
+                tokenized_corpus(list) : list of all words in a corpus
+                unique_word_list(ndarray) : list of all unique word
+                embed_size : the size of vector 
+                context_size : context window size
+                x_max : maximun x size
+                alpha : alpha
         """
         super(GloVeClass, self).__init__()
 
-        self.tokenized_corpus = tokenized_corpus
-        self.unique_word_list = unique_word_list
-        self.context_size = context_size
-        self.embed_size = embed_size
-        self.x_max = x_max
-        self.alpha = alpha
+        self.TOKENIZED_CORPUS = tokenized_corpus
+        self.UNIQUE_WORD_LIST = unique_word_list
+        self.CONTEXT_SIZE = context_size
+        self.EMBED_SIZE = embed_size
+        self.X_MAX = x_max
+        self.ALPHA = alpha
         
         self.word_to_index = {word: index for index, word in enumerate(self.unique_word_list)}
         self.index_to_word = {index: word for index, word in enumerate(self.unique_word_list)}
