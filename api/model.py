@@ -4,10 +4,23 @@ import torch.nn as nn
 from torch.nn.init import xavier_normal
 from torch.autograd import Variable
 
-class GloVe(nn.Module):
-    
+class GloVeClass(nn.Module):
+    """
+        This class provide GloVe model with some beneficial methods to utilize it.
+    """
     def __init__(self, tokenized_corpus, unique_word_list, embed_size, context_size, x_max, alpha):
-        super(GloVe, self).__init__()
+        """
+            This method initialize GloVeClass with given parameters.
+        
+            Args:
+                tokenized_corpus(list) : 
+                unique_word_list(ndarray) : 
+                embed_size : 
+                context_size :
+                x_max :
+                alpha :
+        """
+        super(GloVeClass, self).__init__()
 
         self.tokenized_corpus = tokenized_corpus
         self.unique_word_list = unique_word_list
