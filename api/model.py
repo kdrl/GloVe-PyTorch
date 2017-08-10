@@ -8,56 +8,55 @@ class GloVeClass(nn.Module):
     """
         This class provide GloVe model with some beneficial methods to utilize it.
     """
-    def __init__(self, tokenized_corpus, unique_word_list, embed_size, context_size, x_max, alpha):
+    def __init__(self, TOKENIZED_CORPUS, UNIQUE_WORD_LIST, EMBED_SIZE, CONTEXT_SIZE, X_MAX, ALPHA):
         """
             This method initialize GloVeClass with given parameters.
         
             Args:
-                tokenized_corpus(list) : list of all words in a corpus
-                unique_word_list(ndarray) : list of all unique word
-                embed_size : the size of vector 
-                context_size : context window size
-                x_max : maximun x size
-                alpha : alpha
+                TOKENIZED_CORPUS(list) : list of all words in a corpus
+                UNIQUE_WORD_LIST(ndarray) : list of all unique word
+                EMBED_SIZE : the size of vector 
+                CONTEXT_SIZE : context window size
+                X_MAX : maximun x size
+                ALPHA : ALPHA
         """
         super(GloVeClass, self).__init__()
 
-        self.TOKENIZED_CORPUS = tokenized_corpus
-        self.UNIQUE_WORD_LIST = unique_word_list
-        self.CONTEXT_SIZE = context_size
-        self.EMBED_SIZE = embed_size
-        self.X_MAX = x_max
-        self.ALPHA = alpha
+        self.TOKENIZED_CORPUS = TOKENIZED_CORPUS
+        self.UNIQUE_WORD_LIST = UNIQUE_WORD_LIST
+        self.CONTEXT_SIZE = CONTEXT_SIZE
+        self.EMBED_SIZE = EMBED_SIZE
+        self.X_MAX = X_MAX
+        self.ALPHA = ALPHA
+        self.word_to_index = {word: index for index, word in enumerate(self.UNIQUE_WORD_LIST)}
+        self.index_to_word = {index: word for index, word in enumerate(self.UNIQUE_WORD_LIST)}
+        self.TOKENIZED_CORPUS_SIZE = len(self.TOKENIZED_CORPUS)
+        self.UNIQUE_WORD_SIZE = len(self.UNIQUE_WORD_LIST)
+        self.co_occurence_matrix = np.zeros((self.UNIQUE_WORD_SIZE, self.UNIQUE_WORD_SIZE))
         
-        self.word_to_index = {word: index for index, word in enumerate(self.unique_word_list)}
-        self.index_to_word = {index: word for index, word in enumerate(self.unique_word_list)}
-        self.tokenized_corpus_size = len(self.tokenized_corpus)
-        self.unique_word_size = len(self.unique_word_list)
+        print("TOKENIZED_CORPUS_SIZE : ", self.TOKENIZED_CORPUS_SIZE)
+        print("UNIQUE_WORD_SIZE : ", self.UNIQUE_WORD_SIZE)
         
-        print("tokenized_corpus_size : ",self.tokenized_corpus_size)
-        print("unique_word_size : ",self.unique_word_size)
-        
-        self.co_occurence_matrix = np.zeros((self.unique_word_size, self.unique_word_size))
-        for i in range(self.tokenized_corpus_size):
-            index = self.word_to_index[self.tokenized_corpus[i]]
-            for j in range(1, self.context_size + 1):
-                if i-j > 0:
-                    left_index = self.word_to_index[self.tokenized_corpus[i-j]]
-                    self.co_occurence_matrix[index, left_index] += (1.0/j)
-                    self.co_occurence_matrix[left_index, index] += (1.0/j)
-                if i+j < self.tokenized_corpus_size:
-                    right_index = self.word_to_index[self.tokenized_corpus[i+j]]
-                    self.co_occurence_matrix[index, right_index] += (1.0/j)
-                    self.co_occurence_matrix[right_index, index] += (1.0/j)
+        for i in range(self.TOKENIZED_CORPUS_SIZE):
+            index = self.word_to_index[self.TOKENIZED_CORPUS[i]]
+            for j in range(1, self.CONTEXT_SIZE + 1):
+                if i - j > 0:
+                    left_index = self.word_to_index[self.TOKENIZED_CORPUS[i-j]]
+                    self.co_occurence_matrix[index, left_index] += (1.0 / j)
+                    self.co_occurence_matrix[left_index, index] += (1.0 / j)
+                if i + j < self.TOKENIZED_CORPUS_SIZE:
+                    right_index = self.word_to_index[self.TOKENIZED_CORPUS[i + j]]
+                    self.co_occurence_matrix[index, right_index] += (1.0 / j)
+                    self.co_occurence_matrix[right_index, index] += (1.0 / j)
         self.co_occurence_matrix = self.co_occurence_matrix + 1.0
         
-        self.in_embed = nn.Embedding(self.unique_word_size, self.embed_size)
+        self.in_embed = nn.Embedding(self.UNIQUE_WORD_SIZE, self.EMBED_SIZE)
         self.in_embed.weight = xavier_normal(self.in_embed.weight)
-        self.in_bias = nn.Embedding(self.unique_word_size, 1)
+        self.in_bias = nn.Embedding(self.UNIQUE_WORD_SIZE, 1)
         self.in_bias.weight = xavier_normal(self.in_bias.weight)
-        self.out_embed = nn.Embedding(self.unique_word_size, self.embed_size)
+        self.out_embed = nn.Embedding(self.UNIQUE_WORD_SIZE, self.EMBED_SIZE)
         self.out_embed.weight = xavier_normal(self.out_embed.weight)
-        self.out_bias = nn.Embedding(self.unique_word_size, 1)
+        self.out_bias = nn.Embedding(self.UNIQUE_WORD_SIZE, 1)
         self.out_bias.weight = xavier_normal(self.out_bias.weight)
         
         self.next_batch_container = np.array([]).astype(int)
@@ -71,29 +70,20 @@ class GloVeClass(nn.Module):
         return ((word_u_embed * word_v_embed).sum(1) + word_u_bias + word_v_bias).squeeze(1)
     
     def weight_func(self, x):
-        return 1 if x > self.x_max else (x / self.x_max) ** self.alpha
+        return 1 if x > self.X_MAX else (x / self.X_MAX) ** self.ALPHA
 
     def refill_next_batch_container(self):
-        self.next_batch_container = np.append(self.next_batch_container, np.random.permutation(self.unique_word_size*self.unique_word_size))
+        self.next_batch_container = np.append(self.next_batch_container, np.random.permutation(self.UNIQUE_WORD_SIZE*self.UNIQUE_WORD_SIZE))
         
     def next_batch(self, batch_size):
         if self.next_batch_container.size < batch_size:
             self.refill_next_batch_container()
-        word_u = list()
-        word_v = list()
-        for i in self.next_batch_container[:batch_size]:
-            word_u.append(int(i/self.unique_word_size))
-            word_v.append(i%self.unique_word_size)
-        word_u = np.array(word_u)
-        word_v = np.array(word_v)
+        word_u = (self.next_batch_container[:batch_size]/self.UNIQUE_WORD_SIZE).astype(int)
+        word_v = (self.next_batch_container[:batch_size]%self.UNIQUE_WORD_SIZE).astype(int)
         words_co_occurences = np.array([self.co_occurence_matrix[word_u[i], word_v[i]] for i in range(batch_size)])
         words_weights = np.array([self.weight_func(var) for var in words_co_occurences])
-        words_co_occurences = Variable(torch.from_numpy(words_co_occurences).cuda()).float()
-        words_weights = Variable(torch.from_numpy(words_weights).cuda()).float()
-        word_u = Variable(torch.from_numpy(word_u).cuda())
-        word_v = Variable(torch.from_numpy(word_v).cuda())
         self.next_batch_container = self.next_batch_container[batch_size:]
-        return word_u, word_v, words_co_occurences, words_weights
+        return Variable(torch.from_numpy(word_u).cuda()), Variable(torch.from_numpy(word_v).cuda()), Variable(torch.from_numpy(words_co_occurences).cuda()).float(), Variable(torch.from_numpy(words_weights).cuda()).float()
 
     def embedding(self):
         self.word_embeddings_array = self.in_embed.weight.data.cpu().numpy() + self.out_embed.weight.data.cpu().numpy()
