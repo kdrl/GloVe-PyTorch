@@ -74,6 +74,7 @@ class GloVeClass(nn.Module):
                     self.co_occurence_matrix += queue.get()   # キューに値が無い場合は、値が入るまで待機になる
                 else:
                     self.co_occurence_matrix = queue.get()
+                print("Append {}th process's result into co_occurence_matrix".format(i))
             tries = 10
             while tries:
                 try:
@@ -121,7 +122,7 @@ class GloVeClass(nn.Module):
         return 1 if x > self.X_MAX else (x / self.X_MAX) ** self.ALPHA
 
     def refill_next_batch_container(self):
-        self.next_batch_container = np.append(self.next_batch_container, np.random.permutation(self.UNIQUE_WORD_SIZE * self.UNIQUE_WORD_SIZE))
+        self.next_batch_container = np.append(self.next_batch_container, np.random.permutation(np.arange(self.UNIQUE_WORD_SIZE * self.UNIQUE_WORD_SIZE, dtype = uint32)))
         
     def next_batch(self, batch_size):
         # https://discuss.pytorch.org/t/operation-between-tensor-and-variable/1286/4
