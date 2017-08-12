@@ -5,61 +5,62 @@ import torch
 from api.model import GloVeClass
 from api.process import load_txt_and_tokenize
 
-print("[GPU setting]")
+print("[GPU setting] @ {:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now()))
 os.environ["LD_LIBRARY_PATH"] = "/usr/local/cuda/lib64:/usr/local/lib:/usr/lib64"
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "1,2,3,4"
-print("Done")
+print("Done @ {:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now()))
 
-print("[CUDA check]")
+print("[CUDA check] @ {:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now()))
 CUDA_AVAILABLE = torch.cuda.is_available()
 print("CUDA availability : ", CUDA_AVAILABLE)
-print("Done")
+print("Done @ {:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now()))
 
 torch.manual_seed(1)
 if CUDA_AVAILABLE:
     torch.cuda.manual_seed(1)
 
-print("[Parameter setting]")
+print("[Parameter setting] @ {:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now()))
 CONTEXT_SIZE = 10
-EMBED_SIZE = 500
+EMBED_SIZE = 300
 X_MAX = 100
 ALPHA = 0.75
 BATCH_SIZE = 5000
 L_RATE = 0.05
-NUM_EPOCHS = 30
+NUM_EPOCHS = 50
+TOTAL_PROCESS_NUM = 16
 print(
-    "CONTEXT_SIZE = {}\nEMBED_SIZE = {}\nX_MAX = {}\nALPHA = {}\nBATCH_SIZE = {}\nL_RATE = {}\nNUM_EPOCHS = {}"
-    .format(CONTEXT_SIZE, EMBED_SIZE, X_MAX, ALPHA, BATCH_SIZE, L_RATE, NUM_EPOCHS)
+    "CONTEXT_SIZE = {}\nEMBED_SIZE = {}\nX_MAX = {}\nALPHA = {}\nBATCH_SIZE = {}\nL_RATE = {}\nNUM_EPOCHS = {}\nTOTAL_PROCESS_NUM = {}"
+    .format(CONTEXT_SIZE, EMBED_SIZE, X_MAX, ALPHA, BATCH_SIZE, L_RATE, NUM_EPOCHS, TOTAL_PROCESS_NUM)
 )
-print("Done")
+print("Done @ {:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now()))
 
-print("[Load training data]")
+print("[Load training data] @ {:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now()))
 CORPUS_PATH = ["/data/pearl_hdd1/fukui/dataset/corpus/text8/text8"]
 tokenized_corpus = load_txt_and_tokenize(CORPUS_PATH)
 unique_word_list = np.unique(tokenized_corpus)
 unique_word_list_size = unique_word_list.size
-print("Done")
+print("Done @ {:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now()))
 
-print("[Load model]")
-GloVe = GloVeClass(tokenized_corpus, unique_word_list, EMBED_SIZE, CONTEXT_SIZE, X_MAX, ALPHA)
+print("[Load model] @ {:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now()))
+GloVe = GloVeClass(tokenized_corpus, unique_word_list, EMBED_SIZE, CONTEXT_SIZE, X_MAX, ALPHA, TOTAL_PROCESS_NUM)
 if CUDA_AVAILABLE:
     print("with GPU")
+    # GloVe = GloVe.cuda() # one gpu
     GloVe = torch.nn.DataParallel(GloVe, device_ids=[0, 1, 2, 3]).cuda()
-print("Done")
+print("Done @ {:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now()))
 
-print("[Model parameters]")
+print("[Model parameters] @ {:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now()))
 for p in GloVe.parameters():
     print(p.size())
-print("Done")
+print("Done @ {:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now()))
 
-print("[Set optimizer]")
+print("[Set optimizer] @ {:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now()))
 # optimizer = optim.Adam(GloVe.parameters(), L_RATE)
 optimizer = torch.optim.Adagrad(GloVe.parameters(), L_RATE)
-print("Done")
+print("Done @ {:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now()))
 
-print("[Start training]")
-print("@ {:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now()))
+print("[Start training] @ {:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now()))
 for epoch in range(NUM_EPOCHS):
     losses = []
     for i in range((unique_word_list_size*unique_word_list_size) // BATCH_SIZE):
@@ -77,4 +78,4 @@ for epoch in range(NUM_EPOCHS):
              word_embeddings_array=GloVe.module.embedding(), 
              word_to_index=GloVe.module.word_to_index,
              index_to_word=GloVe.module.index_to_word)
-print("Done")
+print("Done @ {:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now()))
