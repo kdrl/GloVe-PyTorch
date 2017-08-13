@@ -23,7 +23,7 @@ def clean_str(string):
     string = re.sub(r"\s{2,}", " ", string)    
     return string.strip().split()
 
-def load_txt_and_tokenize(corpus_path):
+def load_txt_and_tokenize(corpus_path, lower_bound_occurence):
     """
         load corpus and remove stopwords and return tokenized corpus
         
@@ -44,7 +44,6 @@ def load_txt_and_tokenize(corpus_path):
     appearances = defaultdict(int)
     if type(corpus_path) is not list:
         corpus_path = [corpus_path]
-    print("Load corpus and check appearances of each words")
     for path in corpus_path:
         with open(path) as f:
             for line in f:
@@ -53,11 +52,9 @@ def load_txt_and_tokenize(corpus_path):
                     if word not in stop:
                         appearances[word] += 1
     f.close()    
-    print("Update stopwords list")
     for key, value in appearances.items():
-        if value < 60:
+        if value < lower_bound_occurence:
             stop.add(key)
-    print("Tokenize corpus and remove stopwords")
     for path in corpus_path:
         with open(path) as f:
             for line in f:

@@ -2,7 +2,6 @@ import numpy as np
 import scipy.io
 from scipy.sparse import save_npz, load_npz, coo_matrix
 import multiprocessing as mp
-import datetime
 import torch
 import torch.nn as nn
 from torch.nn.init import xavier_normal
@@ -27,7 +26,7 @@ class GloVeClass(nn.Module):
         """
         super(GloVeClass, self).__init__()
 
-        print("[Initialization Start] @ {:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now()))
+        print("[Initialization Start]")
         self.TOKENIZED_CORPUS = TOKENIZED_CORPUS
         self.UNIQUE_WORD_LIST = UNIQUE_WORD_LIST
         self.CONTEXT_SIZE = CONTEXT_SIZE
@@ -38,10 +37,7 @@ class GloVeClass(nn.Module):
         self.index_to_word = {index: word for index, word in enumerate(self.UNIQUE_WORD_LIST)}
         self.TOKENIZED_CORPUS_SIZE = len(self.TOKENIZED_CORPUS)
         self.UNIQUE_WORD_SIZE = len(self.UNIQUE_WORD_LIST)       
-        
-        print("TOKENIZED_CORPUS_SIZE : ", self.TOKENIZED_CORPUS_SIZE)
-        print("UNIQUE_WORD_SIZE : ", self.UNIQUE_WORD_SIZE)
-        
+
         self.in_embed = nn.Embedding(self.UNIQUE_WORD_SIZE, self.EMBED_SIZE)
         self.in_embed.weight = xavier_normal(self.in_embed.weight)
         self.in_bias = nn.Embedding(self.UNIQUE_WORD_SIZE, 1)
@@ -57,7 +53,7 @@ class GloVeClass(nn.Module):
         
         self.total_process_num = TOTAL_PROCESS_NUM
         if TOTAL_PROCESS_NUM:
-            print("Count co-occurence")
+            print("Build co-occurence matrix with multiprocess")
             print("TOTAL_PROCESS_NUM : ", TOTAL_PROCESS_NUM)
             queue = mp.Queue()
             ps = list()
@@ -71,43 +67,40 @@ class GloVeClass(nn.Module):
                     col += queue.get()   # キューに値が無い場合は、値が入るまで待機になる
                 else:
                     col = queue.get()
-                print("Update co_occurence_matrix @ {:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now()))
             for p in ps:
                 p.terminate()
-            print("Build sparse matrix with the result @ {:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now()))
             col = np.array(col, dtype = np.int64)
             self.co_occurence_matrix = coo_matrix(
                 (np.ones(col.size, dtype = np.int64), (np.zeros(col.size, dtype = np.int64), col)), 
                 shape=(1, int((self.UNIQUE_WORD_SIZE * (self.UNIQUE_WORD_SIZE + 1)) / 2)),
                 dtype = np.int64
             )
-            print("Done @ {:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now()))                             
+            print("Done")                             
             tries = 10
             while tries:
                 try:
-                    print("SAVE co_occurence_matrix @ {:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now()))
+                    print("SAVE co_occurence_matrix")
                     # scipy.io.mmwrite('model/co_occurence_matrix.mtx', self.co_occurence_matrix)
                     save_npz('model/co_occurence_matrix.npz', self.co_occurence_matrix)
+                    print("Done")
                 except IOError as e:
+                    print("IOError happened")
                     error = e
                     tries -= 1
                 else:
                     break
             if not tries:
-                print("IO error happend")
+                print("Fail to saving matrix due to IOError")
                 raise error
         else:
-            print("Load co-occurence matrix @ {:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now()))
+            print("Load co-occurence matrix")
             # self.co_occurence_matrix = scipy.io.mmread('model/co_occurence_matrix.mtx')
             self.co_occurence_matrix = load_npz('model/co_occurence_matrix.npz')
-        print("Done")
-        print("Convert coo_matrix into dense matrix @ {:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now()))
+            print("Done")
         self.co_occurence_matrix = self.co_occurence_matrix.todense()
-        print("Done")
-        print("[Initialization Done] @ {:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now()))
+        print("[Initialization Done]")
         
     def build_sub_co_occurence_matrix(self, queue, process_num):
-        print("build_sub_co_occurence_matrix with child process ({}/{}) start @ {:%Y-%m-%d %H:%M:%S}".format(process_num + 1, self.total_process_num, datetime.datetime.now()))
         col = list()
         # iの範囲を設定
         ini = int(self.TOKENIZED_CORPUS_SIZE * process_num / self.total_process_num)
@@ -122,7 +115,6 @@ class GloVeClass(nn.Module):
                     right_index = self.word_to_index[self.TOKENIZED_CORPUS[i + j]]
                     col.append(self.convert_pairs_to_index(right_index, index))
         queue.put(col)
-        print("build_sub_co_occurence_matrix in process {}(/{}) end @ {:%Y-%m-%d %H:%M:%S}".format(process_num + 1, self.total_process_num, datetime.datetime.now()))
     
     def weight_func(self, x):
         return 1 if x > self.X_MAX else (x / self.X_MAX) ** self.ALPHA
