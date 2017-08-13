@@ -40,10 +40,6 @@ def load_txt_and_tokenize(corpus_path):
             And in the second loop, it build the list of tokenized corpus.
     """
     stop = set(stopwords.words('english'))
-    alphabets = list(string.ascii_lowercase)
-    alphabets.remove('a')
-    alphabets.remove('i')
-    stop.update(alphabets)
     tokenized_corpus = list()
     appearances = defaultdict(int)
     if type(corpus_path) is not list:
@@ -59,7 +55,7 @@ def load_txt_and_tokenize(corpus_path):
     f.close()    
     print("Update stopwords list")
     for key, value in appearances.items():
-        if value < 2:
+        if value < 60:
             stop.add(key)
     print("Tokenize corpus and remove stopwords")
     for path in corpus_path:
