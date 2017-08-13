@@ -67,30 +67,42 @@ optimizer = torch.optim.Adagrad(GloVe.parameters(), L_RATE)
 logger.print_and_log("Done")
 
 logger.print_and_log("[Start training]")
+list_for_estimation = list()
+start_loop_for_estimation = 5
+end_loop_for_estimation = 20
+
 for epoch in range(NUM_EPOCHS):
     logger.print_and_log("EPOCH {} start".format(epoch + 1))
     losses = []
     update_time = ((unique_word_list_size * unique_word_list_size) // BATCH_SIZE)
     point = int(update_time / 5)
     for i in range(1, update_time + 1):
-        if ((epoch == 0) and (i == 1)):
-            time1 = datetime.datetime.now()
-        if ((epoch == 0) and (i == 2)):
-            time2 = datetime.datetime.now()
-            logger.print_and_log("Estimated calculation time per each epoch is {}".format(str((time2 - time1) * update_time)))
+
+        # for epoch calculation time estimation
+        if (epoch == 0) and (i >= start_loop_for_estimation):
+            if (i == start_loop_for_estimation):
+                time = datetime.datetime.now()
+            elif (i < end_loop_for_estimation):
+                list_for_estimation.append(datetime.datetime.now() - time)
+                time = datetime.datetime.now()
+            elif (i == end_loop_for_estimation):
+                logger.print_and_log("Estimated calculation time per each epoch is {}".format(str((np.mean(list_for_estimation)) * update_time)))
+
         if i % point == 0:
-            logger.print_and_log("{} % done".format(int(i / update_time * 100))
-            word_u_variable, word_v_variable, words_co_occurences, words_weights = GloVe.module.next_batch(BATCH_SIZE)
-            # word_u_variable, word_v_variable, words_co_occurences, words_weights = GloVe.next_batch(self.batch_size) # when it is not in parallel
-            forward_output = GloVe(word_u_variable, word_v_variable)
-            loss = (torch.pow((forward_output - torch.log(words_co_occurences)), 2) * words_weights).sum()
-            losses.append(loss.data[0])
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-    logger.print_and_log("Train Epoch: {} \t Loss: {:.6f}".format(epoch + 1, np.mean(losses))
-    np.savez('model/glove.npz', 
-             word_embeddings_array=GloVe.module.embedding(), 
-             word_to_index=GloVe.module.word_to_index,
-             index_to_word=GloVe.module.index_to_word)
+            logger.print_and_log("{} % done".format(int(i / update_time * 100)))
+        word_u_variable, word_v_variable, words_co_occurences, words_weights = GloVe.module.next_batch(BATCH_SIZE)
+        # word_u_variable, word_v_variable, words_co_occurences, words_weights = GloVe.next_batch(self.batch_size) # when it is not in parallel
+        forward_output = GloVe(word_u_variable, word_v_variable)
+        loss = (torch.pow((forward_output - torch.log(words_co_occurences)), 2) * words_weights).sum()
+        losses.append(loss.data[0])
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+    logger.print_and_log("Train Epoch: {} \t Loss: {:.6f}".format(epoch + 1, np.mean(losses)))
+    np.savez(
+        'model/glove.npz', 
+        word_embeddings_array=GloVe.module.embedding(), 
+        word_to_index=GloVe.module.word_to_index,
+        index_to_word=GloVe.module.index_to_word
+        )
 logger.print_and_log("Done")
