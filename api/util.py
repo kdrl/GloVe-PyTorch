@@ -1,4 +1,7 @@
 from sklearn.metrics.pairwise import cosine_similarity
+import logging
+import logging.handlers
+
 def most_similar(word_embeddings_array, word_to_index, index_to_word, word, result_num = 1):
     data = []
     target_index = word_to_index[word]
