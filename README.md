@@ -23,5 +23,4 @@ print(most_similar(word_embeddings_array,word_to_index,index_to_word,"computer",
 
     [('software', 0.54145634), ('computers', 0.51864588), ('apple', 0.46997803), ('machines', 0.45792481), ('workstations', 0.43789768)]
 
-<hr>
-This project is not done yet and will be updated later.
+
