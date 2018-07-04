@@ -1,8 +1,8 @@
 # GloVe-PyTorch
 A simple PyTorch implementation for "Global Vectors for Word Representation".
 
-## Design & Train model
-See modeldesign.ipynb and main.py.
+## Train model
+See main.py.
 
 ## Utilize model
 See modelcheck.ipynb and below.
