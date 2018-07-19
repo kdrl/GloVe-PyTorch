@@ -4,8 +4,7 @@ A simple PyTorch implementation for "Global Vectors for Word Representation".
 ## Train model
 See main.py.
 
-## Utilize model
-See modelcheck.ipynb and below.
+## Test model
 
 ```python
 import numpy as np
